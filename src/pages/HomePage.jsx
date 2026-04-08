@@ -23,7 +23,7 @@ export default function HomePage() {
       const data = await generateImage(prompt.trim())
       setResult({
         ...data,
-        image_url: `http://192.168.199.40:8000/generate/image/${data.job_id}`,
+        image_url: `${import.meta.env.VITE_API_BASE_URL}/generate/image/${data.job_id}`,
         download_url: data['download-url'],
       })
     } catch (err) {

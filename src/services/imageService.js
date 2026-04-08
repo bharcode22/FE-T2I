@@ -1,4 +1,4 @@
-const BASE_URL = 'http://192.168.199.40:8000'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export async function fetchImages() {
   const res = await fetch(`${BASE_URL}/generate/list`)
