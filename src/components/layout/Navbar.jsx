@@ -1,8 +1,8 @@
 import { NavLink } from 'react-router-dom'
 
 const links = [
-  { to: '/', label: 'Beranda' },
-  { to: '/gallery', label: 'Galeri' },
+  { to: '/', label: 'Play Ground' },
+  { to: '/gallery', label: 'Gallery' },
 ]
 
 export default function Navbar() {
@@ -11,7 +11,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
         {/* Logo */}
         <NavLink to="/" className="text-white font-bold text-lg tracking-tight">
-          Teks<span className="text-indigo-400">2</span>Image
+          AI <span className="text-indigo-400">Image </span>
         </NavLink>
 
         {/* Links */}

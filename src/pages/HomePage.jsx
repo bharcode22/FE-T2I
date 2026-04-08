@@ -1,26 +1,69 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { generateImage } from '../services/imageService'
+import { generateImage, generateImageToImage } from '../services/imageService'
 
 const PLACEHOLDER =
   'A beach night with pastel sky, soft glowing colors, calm sea, gentle waves, aesthetic atmosphere...'
 
+const RESOLUTION_PRESETS = [
+  { label: 'Landscape (1216x832)', width: 1216, height: 832 },
+  { label: 'Portrait (832x1216)', width: 832, height: 1216 },
+  { label: 'Square (1024x1024)', width: 1024, height: 1024 },
+  { label: 'Wide (1536x640)', width: 1536, height: 640 },
+  { label: 'Custom', width: null, height: null },
+]
+
 export default function HomePage() {
+  const [mode, setMode] = useState('text2img')
   const [prompt, setPrompt] = useState('')
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
+  
+  // Resolution states
+  const [selectedPreset, setSelectedPreset] = useState(0)
+  const [customWidth, setCustomWidth] = useState(1216)
+  const [customHeight, setCustomHeight] = useState(832)
+
+  const getResolution = () => {
+    const preset = RESOLUTION_PRESETS[selectedPreset]
+    if (preset.width && preset.height) {
+      return { width: preset.width, height: preset.height }
+    }
+    return { width: customWidth, height: customHeight }
+  }
 
   async function handleGenerate(e) {
     e.preventDefault()
-    if (!prompt.trim()) return
+    
+    if (mode === 'text2img' && !prompt.trim()) return
+    if (mode === 'img2img' && (!prompt.trim() || !imageFile)) return
 
     setLoading(true)
     setResult(null)
     setError(null)
 
     try {
-      const data = await generateImage(prompt.trim())
+      const { width, height } = getResolution()
+      let data
+
+      if (mode === 'text2img') {
+        data = await generateImage({
+          prompt: prompt.trim(),
+          width,
+          height,
+        })
+      } else {
+        data = await generateImageToImage({
+          file: imageFile,
+          prompt: prompt.trim(),
+          width,
+          height,
+        })
+      }
+
       setResult({
         ...data,
         image_url: `${import.meta.env.VITE_API_BASE_URL}/generate/image/${data.job_id}`,
@@ -36,28 +79,94 @@ export default function HomePage() {
   function handleReset() {
     setResult(null)
     setPrompt('')
+    setImageFile(null)
+    setImagePreview(null)
     setError(null)
   }
 
+  function handleFileChange(e) {
+    const file = e.target.files[0]
+    if (file) {
+      setImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   return (
-    <div className="max-w-2xl mx-auto py-16 space-y-10">
+    <div className="max-w-3xl mx-auto py-16 px-4 space-y-10">
       {/* Hero */}
       <div className="text-center space-y-3">
         <h1 className="text-5xl font-extrabold tracking-tight">
-          Teks<span className="text-indigo-400">2</span>Image
+          AI <span className="text-indigo-400">Image </span>
         </h1>
         <p className="text-gray-400 text-lg">
-          Ubah deskripsi teks menjadi gambar menggunakan AI.
+          Explore your imagination
         </p>
+      </div>
+
+      {/* Mode Selector */}
+      <div className="flex gap-2 p-1 bg-gray-900 rounded-xl">
+        <button
+          onClick={() => setMode('text2img')}
+          className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${
+            mode === 'text2img'
+              ? 'bg-indigo-600 text-white'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          📝 Text to Image
+        </button>
+        <button
+          onClick={() => setMode('img2img')}
+          className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${
+            mode === 'img2img'
+              ? 'bg-indigo-600 text-white'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          🖼️ Image to Image
+        </button>
       </div>
 
       {/* Form */}
       <form onSubmit={handleGenerate} className="space-y-4">
+        {/* Image Upload (only for img2img mode) */}
+        {mode === 'img2img' && (
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-300">
+              Upload Gambar Referensi
+            </label>
+            <div className="relative">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                disabled={loading}
+                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 file:cursor-pointer disabled:opacity-50"
+              />
+            </div>
+            {imagePreview && (
+              <div className="mt-2">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="max-h-48 rounded-lg border border-gray-700"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Prompt Input */}
         <div className="relative">
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder={PLACEHOLDER}
+            placeholder={mode === 'text2img' ? PLACEHOLDER : 'Deskripsikan modifikasi yang diinginkan...'}
             rows={4}
             disabled={loading}
             className="w-full bg-gray-900 border border-gray-700 focus:border-indigo-500 focus:outline-none rounded-xl px-4 py-3 text-white placeholder-gray-600 resize-none transition-colors disabled:opacity-50"
@@ -67,18 +176,83 @@ export default function HomePage() {
           </span>
         </div>
 
+        {/* Resolution Control */}
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-gray-300">
+            Resolution
+          </label>
+          
+          {/* Preset Selector */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            {RESOLUTION_PRESETS.map((preset, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setSelectedPreset(idx)}
+                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                  selectedPreset === idx
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Resolution Inputs */}
+          {selectedPreset === RESOLUTION_PRESETS.length - 1 && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Width</label>
+                <input
+                  type="number"
+                  value={customWidth}
+                  onChange={(e) => setCustomWidth(parseInt(e.target.value) || 512)}
+                  min="64"
+                  max="2048"
+                  step="64"
+                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Height</label>
+                <input
+                  type="number"
+                  value={customHeight}
+                  onChange={(e) => setCustomHeight(parseInt(e.target.value) || 512)}
+                  min="64"
+                  max="2048"
+                  step="64"
+                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Current Resolution Display */}
+          <div className="text-xs text-gray-500">
+            Output: {getResolution().width} × {getResolution().height}
+          </div>
+        </div>
+
+        {/* Generate Button */}
         <button
           type="submit"
-          disabled={loading || !prompt.trim()}
+          disabled={
+            loading ||
+            (mode === 'text2img' && !prompt.trim()) ||
+            (mode === 'img2img' && (!prompt.trim() || !imageFile))
+          }
           className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors rounded-xl font-semibold text-white flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Sedang generate…
+              Generating…
             </>
           ) : (
-            'Generate Gambar'
+            `Generate ${mode === 'text2img' ? 'Image' : 'Variasi'}`
           )}
         </button>
       </form>
@@ -121,7 +295,7 @@ export default function HomePage() {
                 onClick={handleReset}
                 className="flex-1 bg-gray-800 hover:bg-gray-700 transition-colors text-gray-300 text-sm font-medium py-2 rounded-lg"
               >
-                Generate Lagi
+                Generate
               </button>
             </div>
           </div>
@@ -131,9 +305,9 @@ export default function HomePage() {
       {/* Link ke galeri */}
       {!loading && (
         <p className="text-center text-gray-600 text-sm">
-          Lihat semua hasil di{' '}
+          All Result{' '}
           <Link to="/gallery" className="text-indigo-400 hover:underline">
-            Galeri
+            Gallery
           </Link>
         </p>
       )}
