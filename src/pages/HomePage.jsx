@@ -5,11 +5,19 @@ import { generateImage, generateImageToImage } from '../services/imageService'
 const PLACEHOLDER =
   'A beach night with pastel sky, soft glowing colors, calm sea, gentle waves, aesthetic atmosphere...'
 
+// const RESOLUTION_PRESETS = [
+//   { label: 'Landscape (1216x832)', width: 1216, height: 832 },
+//   { label: 'Portrait (832x1216)', width: 832, height: 1216 },
+//   { label: 'Square (1024x1024)', width: 1024, height: 1024 },
+//   { label: 'Wide (1536x640)', width: 1536, height: 640 },
+//   { label: 'Custom', width: null, height: null },
+// ]
+
 const RESOLUTION_PRESETS = [
-  { label: 'Landscape (1216x832)', width: 1216, height: 832 },
-  { label: 'Portrait (832x1216)', width: 832, height: 1216 },
-  { label: 'Square (1024x1024)', width: 1024, height: 1024 },
-  { label: 'Wide (1536x640)', width: 1536, height: 640 },
+  { label: 'Landscape (1024x672)', width: 1024, height: 672 },
+  { label: 'Portrait (672x1024)', width: 672, height: 1024 },
+  { label: 'Square (832x832)', width: 832, height: 832 },
+  { label: 'Wide (1152x480)', width: 1152, height: 480 },
   { label: 'Custom', width: null, height: null },
 ]
 
