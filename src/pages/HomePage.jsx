@@ -260,7 +260,7 @@ export default function HomePage() {
               Generating…
             </>
           ) : (
-            `Generate ${mode === 'text2img' ? 'Image' : 'Variasi'}`
+            `Generate ${mode === 'text2img' ? 'Image' : 'Variation'}`
           )}
         </button>
       </form>
